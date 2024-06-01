@@ -1,4 +1,4 @@
-# 🚆 Railway Ticket Booking System
+# 🚂 iRTS - Railway Ticket Booking System
 
 ## Table of Contents
 1. [Introduction](#introduction)
