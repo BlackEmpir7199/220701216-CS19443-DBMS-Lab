@@ -1,365 +1,130 @@
-# User Authentication and System Setup Guide
-
-Welcome to the User Authentication and System Setup guide for managing trains, stations, and user authentication in your application. This guide provides detailed instructions on setting up, using, and troubleshooting the authentication function and managing various aspects of your system.
-
-## Overview
-
-The `authenticate_user` function is a crucial component designed to authenticate users by validating their email and password against records stored in a MySQL database. Additionally, this guide covers instructions on setting up and managing trains, stations, and other settings within your system.
-
-## Setup Instructions
-
-### 1. Install Required Python Libraries
-
-Ensure you have the necessary Python libraries installed by running the following command:
-
-```bash
-pip install streamlit pandas mysql-python-connector mysql
-```
-
-### 2. Database Configuration
-
-Set up your MySQL database and create the required tables by following these steps:
-
-1. **Open MySQL Workbench**: Download and install [MySQL Workbench](https://dev.mysql.com/downloads/workbench/).
-2. **Connect to MySQL Server**: Open MySQL Workbench and connect to your MySQL server.
-3. **Create Database**: If not already created, create a new database:
-   
-    ```sql
-    CREATE DATABASE your_database;
-    ```
-4. **Create Tables**: Create the necessary tables (e.g., `admins`, `users`, `trains`, `stations`) with appropriate columns. See the example provided in the guide for table structure.
-
-   ```sql
-   USE your_database;
-
-   CREATE TABLE `stations` (
-   `station_id` int NOT NULL AUTO_INCREMENT,
-   `name` varchar(100) NOT NULL,
-    PRIMARY KEY (`station_id`)
-    );
-
-   CREATE TABLE `users` (
-   `name` varchar(100) NOT NULL,
-   `email` varchar(100) NOT NULL,
-   `password` varchar(100) NOT NULL,
-    PRIMARY KEY (`email`),
-    UNIQUE KEY `email` (`email`)
-   );
-
-   CREATE TABLE `admins` (
-   `email` varchar(255) NOT NULL,
-   `name` varchar(100) NOT NULL,
-   `password` varchar(255) NOT NULL,
-   PRIMARY KEY (`email`),
-   UNIQUE KEY `username` (`name`)
-   );
-
-   CREATE TABLE `trains` (
-   `train_id` int NOT NULL AUTO_INCREMENT,
-   `name` varchar(100) NOT NULL,
-   `from_station` int DEFAULT NULL,
-   `to_station` int DEFAULT NULL,
-   `departure_time` time NOT NULL,
-   `arrival_time` time NOT NULL,
-   `total_seats` int NOT NULL,
-   `available_seats` int NOT NULL,
-   PRIMARY KEY (`train_id`),
-   KEY `from_station` (`from_station`),
-   KEY `to_station` (`to_station`),
-   CONSTRAINT `trains_ibfk_1` FOREIGN KEY (`from_station`) REFERENCES `stations` (`station_id`),
-   CONSTRAINT `trains_ibfk_2` FOREIGN KEY (`to_station`) REFERENCES `stations` (`station_id`)  
-   );
-
-   CREATE TABLE `bookings` (
-   `booking_id` int NOT NULL AUTO_INCREMENT,
-   `train_id` int DEFAULT NULL,
-   `date_of_travel` date NOT NULL,
-   `email` varchar(100) NOT NULL,
-   PRIMARY KEY (`booking_id`),
-   KEY `train_id` (`train_id`),
-   CONSTRAINT `bookings_ibfk_2` FOREIGN KEY (`train_id`) REFERENCES `trains` (`train_id`)
-   );
-
-   CREATE TABLE `passengers` (
-   `passenger_id` int NOT NULL AUTO_INCREMENT,
-   `booking_id` int DEFAULT NULL,
-   `name` varchar(100) DEFAULT NULL,
-   `age` int DEFAULT NULL,
-   `sex` varchar(10) DEFAULT NULL,
-   PRIMARY KEY (`passenger_id`),
-   KEY `booking_id` (`booking_id`),
-   CONSTRAINT `passengers_ibfk_1` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`booking_id`)
-   );
-```
-
-
-## Function Definition
-
-The `create_connection` function to establish database connectivity. Below is the function definition along with table name sanitization to ensure security and effectiveness.
-
-```python
-def create_connection():
-    try:
-        connection = mysql.connector.connect(
-            host='your_host',
-            database='your_database',
-            user='your_user',
-            password='your_password'
-        )
-        if connection.is_connected():
-            return connection
-    except Error as e:
-        st.error(f"The error '{e}' occurred")
-        return None
-```
-
-## Usage Instructions
-
-Follow these steps to utilize the `authenticate_user` function:
-
-1. Define User Credentials and Table:
-   ```python
-   table_name = 'admins'
-   email = 'example@gmail.com'
-   password = 'password123'
-   ```
-
-2. Call the Function:
-   ```python
-   user = authenticate_user(table_name, email, password)
-   if user:
-       print("User authenticated successfully")
-   else:
-       print("Authentication failed")
-   ```
-
-## Example Script
-
-An example script is provided to demonstrate the usage of the authentication function along with other functionalities like registering users and admins.
-
-```python
-import mysql.connector
-from mysql.connector import Error
-def authenticate_user(table, usermail, password):
-    # Allowed tables list
-    allowed_tables = ['admins', 'users']  # Add all allowed table names here
-
-    if table not in allowed_tables:
-        st.error("Invalid table name")
-        return None
-
-    connection = create_connection()
-    if connection is None:
-        st.error("Failed to create connection to the database")
-        return None
-
-    cursor = connection.cursor()
-    try:
-        # Properly include the table name in the query
-        query = f"SELECT * FROM {table} WHERE email = %s AND password = %s"
-        cursor.execute(query, (usermail, password))
-        user = cursor.fetchone()
-        return user
-    except Error as e:
-        st.error(f"The error '{e}' occurred")
-    finally:
-        cursor.close()
-        connection.close()
-```
-
-## Managing Trains, Stations, and Settings
-
-You can manage trains, stations, and other settings using functions provided in the guide. Example functions include adding trains, booking tickets, and updating stations.
-
-```python
-def book_ticket(train_id, email, date_of_travel):
-    query = "INSERT INTO bookings (train_id, email, date_of_travel) VALUES (%s, %s, %s)"
-    params = (train_id, email, date_of_travel)
-    booking_id = execute_query(query, params)
-    return booking_id
-
-
-def add_passenger(booking_id, name, age, sex):
-    query = "INSERT INTO passengers (booking_id, name, age, sex) VALUES (%s, %s, %s, %s)"
-    return execute_query(query, (booking_id, name, age, sex))
-
-
-def get_tickets(email):
-    query = """
-    SELECT b.booking_id, b.train_id, b.date_of_travel, u.name
-    FROM bookings b
-    JOIN users u ON b.email = u.email
-    WHERE u.email = %s
-    """
-    params = (email,)
-    tickets = execute_read_query(query, params)
-    return tickets
-
-
-def delete_ticket(booking_id):
-    # First, delete all passengers associated with the booking
-    delete_passengers_by_booking_id(booking_id)
-
-    # Then, delete the booking from the 'bookings' table
-    query = "DELETE FROM bookings WHERE booking_id = %s"
-    execute_query(query, (booking_id,))
-
-
-def delete_passengers_by_booking_id(booking_id):
-    query = "DELETE FROM passengers WHERE booking_id = %s"
-    execute_query(query, (booking_id,))
-
-
-def get_passengers_by_booking_id(booking_id):
-    query = "SELECT * FROM passengers WHERE booking_id = %s"
-    return execute_read_query(query, (booking_id,))
-
-
-def delete_passenger(passenger_id):
-    query = "DELETE FROM passengers WHERE passenger_id = %s"
-    execute_query(query, (passenger_id,))
-
-
-def get_trains():
-    query = """
-    SELECT t.train_id, t.name, s1.name AS from_station, s2.name AS to_station, t.departure_time, t.arrival_time, t.total_seats, t.available_seats
-    FROM trains t
-    JOIN stations s1 ON t.from_station = s1.station_id
-    JOIN stations s2 ON t.to_station = s2.station_id
-    """
-    return execute_read_query(query)
-
-
-def add_train(name, from_station, to_station, departure_time, arrival_time, total_seats, available_seats):
-    query = """
-    INSERT INTO trains (name, from_station, to_station, departure_time, arrival_time, total_seats, available_seats)
-    VALUES (%s, %s, %s, %s, %s, %s, %s)
-    """
-    return execute_query(query, (name, from_station, to_station, departure_time, arrival_time, total_seats, available_seats))
-
-
-def update_train(train_id, name, from_station, to_station, departure_time, arrival_time, total_seats, available_seats):
-    query = """
-    UPDATE trains
-    SET name = %s, from_station = %s, to_station = %s, departure_time = %s, arrival_time = %s, total_seats = %s, available_seats = %s
-    WHERE train_id = %s
-    """
-    return execute_query(query, (name, from_station, to_station, departure_time, arrival_time, total_seats, available_seats, train_id))
-
-def get_trains():
-    query = "SELECT * FROM trains"
-    trains = execute_read_query(query)
-    return trains
-
-def get_stations():
-    query = "SELECT * FROM stations"
-    return execute_read_query(query)
-
-
-def add_station(station_name):
-    query = "INSERT INTO stations (name) VALUES (%s)"
-    return execute_query(query, (station_name,))
-
-
-def update_station(old_name, new_name):
-    query = "UPDATE stations SET name = %s WHERE name = %s"
-    return execute_query(query, (new_name, old_name))
-
-
-def delete_station(station_name):
-    query = "DELETE FROM stations WHERE name = %s"
-    return execute_query(query, (station_name,))
-
-
-def get_trains_by_station(station_name):
-    query = """
-    SELECT t.* 
-    FROM trains t
-    JOIN stations s ON t.from_station = s.station_id OR t.to_station = s.station_id
-    WHERE s.name = %s
-    """
-    return execute_read_query(query, (station_name,))
-
-
-def update_train_station(train_id, new_station_name):
-    new_station_id_query = "SELECT station_id FROM stations WHERE name = %s"
-    new_station_id = execute_read_query(new_station_id_query, (new_station_name,))[0]['station_id']
-    query = "UPDATE trains SET from_station = %s WHERE train_id = %s"
-    return execute_query(query, (new_station_id, train_id))
-
-
-def search_trains(from_station, to_station, date_of_travel):
-    query = """
-    SELECT * FROM trains 
-    WHERE from_station IN (SELECT station_id FROM stations WHERE name = %s) 
-    AND to_station IN (SELECT station_id FROM stations WHERE name = %s)
-    """
-    params = (from_station, to_station)
-    trains = execute_read_query(query, params)
-    return trains
-
-def delete_train(train_name):
-    query = "DELETE FROM trains WHERE name = %s"
-    return execute_query(query, (train_name,))
-
-
-def delete_trains_by_station(station_name):
-    query = """
-    DELETE FROM trains 
-    WHERE from_station = (SELECT station_if from stations where name=%s)
-    OR to_station = (SELECT station_id from stations where name=%s)
-    """
-    execute_query(query, (station_name, station_name))
-
-    def add_train(train_name, capacity):
-        connection = create_connection()
-        if connection is None:
-            st.error("Failed to create connection to the database")
-            return None
-
-        cursor = connection.cursor()
-        try:
-            query = "INSERT INTO trains (train_name, capacity) VALUES (%s, %s)"
-            cursor.execute(query, (train_name, capacity))
-            connection.commit()
-            st.success("Train added successfully")
-        except Error as e:
-            st.error(f"The error '{e}' occurred")
-        finally:
-            cursor.close()
-            connection.close()
-
-    # Example usage
-    add_train("Express", 200)
-```
-## Running The Application
-
-Before running the application, ensure that you have completed the configuration steps mentioned above, including setting up streamlit and MySQL integration and any necessary dependencies.
-
-To start the application, use the following command:
-
-```bash
-streamlit run main.py
-```
-
-Make sure you are in the correct directory where `main.py` is located before executing this command. Once the application is running, you can access it in your web browser at the URL provided in the terminal output.
-## Troubleshooting
-
-If you encounter any issues, consider the following troubleshooting steps:
-
-- **Connection Issues**: Verify database connection parameters.
-- **Invalid Table Name**: Ensure the table name is correct and in the allowed list.
-- **SQL Errors**: Check console output for SQL errors and verify table structure.
-
-## Security Considerations
-
-To ensure security, follow these best practices:
-
-- **Parameterization**: Always use parameterized queries to prevent SQL injection.
-- **Sanitization**: Verify and sanitize user inputs, especially table names, to prevent SQL injection attacks.
-
-By following this guide, you should be able to securely authenticate users and effectively manage various aspects of your system. For further assistance, refer to the troubleshooting section or consult MySQL and Python documentation.
+# 🚆 Railway Ticket Booking System
+
+## Table of Contents
+1. [Introduction](#introduction)
+2. [Objectives](#objectives)
+3. [Modules](#modules)
+4. [Survey of Technologies](#survey-of-technologies)
+    - [Software Description](#software-description)
+    - [Languages](#languages)
+5. [Requirements and Analysis](#requirements-and-analysis)
+    - [Requirement Specification](#requirement-specification)
+    - [Hardware and Software Requirements](#hardware-and-software-requirements)
+6. [Data Flow Diagram](#data-flow-diagram)
+7. [Program Code](#program-code)
+8. [Results and Discussion](#results-and-discussion)
+9. [Testing](#testing)
+10. [Conclusion](#conclusion)
 
 ---
 
-Feel free to customize this guide to fit your specific application requirements. Happy coding! 🚀
+## Introduction
+The Railway Ticket Booking System is an application designed to facilitate the process of booking, viewing, and canceling railway tickets. Utilizing Python, Streamlit, and MySQL, this system provides a user-friendly interface and a robust backend ensuring efficient and secure operations. By integrating database normalization techniques, the system achieves optimal data management, reducing redundancy and maintaining data integrity.
+
+## Objectives
+The primary objective of the Railway Ticket Booking System is to develop a reliable and efficient platform for users to book railway tickets online. The system aims to:
+1. Provide a seamless and intuitive user interface for ticket booking, viewing, and cancellation.
+2. Ensure data integrity and optimal database performance through normalization principles.
+3. Offer secure and scalable solutions for handling user data and transactions.
+4. Enable administrative control over train schedules, fare management, and user management.
+5. Enhance the overall user experience by minimizing booking errors and simplifying the ticket management process.
+
+## Modules
+1. **User Registration and Authentication**:
+    - Sign-Up: Allows new users to create accounts.
+    - Login: Enables existing users to log in securely.
+    - Password Management: Provides functionalities for password recovery and changes.
+
+2. **Ticket Booking**:
+    - Search Trains: Users can search for trains based on source, destination, and travel dates.
+    - Select Seats: Users can view and select available seats.
+    - Calculate Fare: Displays the total fare based on selected options.
+    - Payment Processing: Integrates with payment gateways for secure transactions.
+
+3. **View Ticket**:
+    - Booking Confirmation: Displays booking confirmation details including train information and seat numbers.
+    - Ticket Details: Allows users to view detailed information about their booked tickets.
+
+4. **Cancel Ticket**:
+    - Cancellation Request: Users can request ticket cancellations.
+    - Refund Processing: Handles refunds according to cancellation policies.
+
+5. **Admin Panel**:
+    - Manage Train Schedules: Admins can add, update, or remove train schedules.
+    - Manage Fares: Admins can set and update fare information.
+    - User Management: Admins can view and manage user accounts and their activities.
+
+6. **Database Management**:
+    - Normalized Schema: Ensures the database is normalized up to the third normal form (3NF).
+    - Data Integrity: Maintains consistent and reliable data storage.
+    - Scalability: Ensures the database can handle large volumes of data efficiently.
+
+## Survey of Technologies
+
+### Software Description
+- **Visual Studio Code**: Combines simplicity with powerful developer tooling like IntelliSense code completion and debugging. It facilitates a frictionless edit-build-debug cycle.
+
+### Languages
+- **Python**: An interpreted, object-oriented, high-level programming language known for its readability and beginner-friendly syntax. Widely used for web development, software development, and data analysis.
+- **MySQL**: The most popular open-source SQL database management system, developed by Oracle Corporation, known for its reliability and performance in handling large volumes of data.
+
+## Requirements and Analysis
+
+### Requirement Specification
+- **User Requirements**:
+    - User Registration and Authentication
+    - Ticket Booking
+    - View Ticket
+    - Cancel Ticket
+    - User Profile Management
+
+- **System Requirements**:
+    - Functional Requirements
+    - Non-Functional Requirements
+
+### Hardware and Software Requirements
+- **Software Requirements**:
+    - Operating System: Windows 10
+    - Front End: HTML, CSS, JavaScript
+    - Back End: Python, MySQL
+- **Hardware Requirements**:
+    - Desktop PC or Laptop
+    - Printer
+    - Intel® CoreTM i3-6006U CPU @ 2.00GHz
+    - 4.00 GB RAM
+    - 64-bit operating system, x64 based processor
+    - 1024 x 768 monitor resolution
+    - Keyboard and Mouse
+
+## Data Flow Diagram
+A Data Flow Diagram (DFD) represents the flow of data through a process or system. It provides an overview of the data processing in the system.
+
+
+## Program Code
+You can find the complete program code in the [repository](https://github.com/BlackEmpir7199/220701216-CS19443-DBMS-Lab/tree/main/Mini%20Project/Project%20Code).
+
+## Results and Discussion
+Details on the results obtained from the implementation and a discussion on the effectiveness and performance of the system.
+
+## Testing
+Information on the testing methodologies used to ensure the system's reliability and performance.
+
+## Conclusion
+A summary of the project, its achievements, and potential future improvements.
+
+---
+
+### Contributing
+We welcome contributions! Please read our [contributing guidelines](CONTRIBUTING.md) for more information.
+
+### License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+### Contact
+For any inquiries, please reach out to [your-email@example.com](mailto:your-email@example.com).
+
+---
+
+Made with ❤️ by
+ -[Rakhul Prakash S B](https://github.com/BlackEmpir7199)
+ -[Sabarish S](https://github.com/Sabarish234)
