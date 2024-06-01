@@ -121,7 +121,7 @@ We welcome contributions! Please read our [contributing guidelines](CONTRIBUTING
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ### Contact
-For any inquiries, please reach out to [your-email@example.com](mailto:your-email@example.com).
+For any inquiries, please reach out to [220701216@rajalakshmi.edu.in](mailto:220701216@rajalakshmi.edu.in).
 
 ---
 
