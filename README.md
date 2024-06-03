@@ -115,7 +115,7 @@ The Project was made inorder to showcase the robustness of streamlit collectivel
 ---
 
 ### Contributing
-We welcome contributions! Please read our [contributing guidelines](CONTRIBUTING.md) for more information.
+We welcome contributions! Please read our [contributing guidelines] for more information.
 
 
 ### Contact
