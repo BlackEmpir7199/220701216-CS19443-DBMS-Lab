@@ -1,4 +1,4 @@
-# 🚆 Railway Ticket Booking System
+# 🚂 iRTS - Railway Ticket Booking System
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -119,7 +119,7 @@ We welcome contributions! Please read our [contributing guidelines](CONTRIBUTING
 
 
 ### Contact
-For any inquiries, please reach out to [your-email@example.com](mailto:your-email@example.com).
+For any inquiries, please reach out to [220701216@rajalakshmi.edu.in](mailto:220701216@rajalakshmi.edu.in).
 
 ---
 
