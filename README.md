@@ -110,7 +110,7 @@ Details on the results obtained from the implementation and a discussion on the 
 Information on the testing methodologies used to ensure the system's reliability and performance.
 
 ## Conclusion
-A summary of the project, its achievements, and potential future improvements.
+The Project was made inorder to showcase the robustness of streamlit collectively with relational databases like MySQL streamlining rapid development of applications.
 
 ---
 
