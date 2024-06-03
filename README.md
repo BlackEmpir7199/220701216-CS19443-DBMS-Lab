@@ -117,8 +117,6 @@ A summary of the project, its achievements, and potential future improvements.
 ### Contributing
 We welcome contributions! Please read our [contributing guidelines](CONTRIBUTING.md) for more information.
 
-### License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ### Contact
 For any inquiries, please reach out to [your-email@example.com](mailto:your-email@example.com).
